@@ -158,9 +158,11 @@ def browser(lista):
             # filtering information ++
             if elem.startswith(key):
                 print(elem + '(' + item + ')')
-                search.close()
-                break
-
+                
+            if not elem.starswith(key):
+                print("item não encontrado: " + item)
+            search.close()
+            break
 
 if __name__ == '__main__':
     main()
