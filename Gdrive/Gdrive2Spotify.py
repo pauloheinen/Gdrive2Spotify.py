@@ -1,4 +1,4 @@
-'''
+"""
 client ID GDRIVE 112307785324623293295
 api KEY GDRIVE AIzaSyDV7ZD8MPZy44akQdQ3ixFZCllxLueGsNI
 
@@ -7,7 +7,7 @@ Client Secret SPOTIFY d00fda6a444f41cbb4e3bd5528fd8475
 
 https://imasters.com.br/back-end/google-search-usando-selenium-e-python-o-basico-sobre-selenium-python
 Make a script that takes .mp3 from Gdrive and add that .mp3 on Spotify.
-'''
+"""
 
 # GDRIVE
 from __future__ import print_function
@@ -33,7 +33,8 @@ SCOPES = ['https://www.googleapis.com/auth/drive.metadata.readonly']
 
 def rec(drive):
     print(
-        'What do you want to search for?\n[1] Folder\n[2] Image\n[3] Audio\n[4] Video\n[5] PDF\n[6] Text\n[7] Is Trash?\n'
+        'What do you want to search for?\n[1] Folder\n[2] Image\n[3] Audio\n[4] Video\n[5] PDF\n[6] Text\n[7] Is '
+        'Trash?\n '
         '[8] Hidden file?\n[9] Name contains\n[10] All files')
     choice = None
     query = []
@@ -41,7 +42,7 @@ def rec(drive):
         query.append("'application/vnd.google-apps.folder'")
     if choice == '2':
         query.append("'image/jpeg'")
-    if (choice == '3'):
+    if choice == '3':
         query.append("'audio/mpeg'")
     if choice == '4':
         query.append("'video/mp4'")
@@ -147,22 +148,24 @@ def browser(lista):
         q.replace(' ', '')
 
         # gathering information
-        search.get("https://www.google.com/search?q=" + q + " spotify track")
-        elems = search.find_elements_by_xpath("//a[@href]")
+        search.get("https://www.google.com/search?q=" + 'spotify track ' + q)
+        urls = search.find_elements_by_xpath("//a[@href]")
         key = 'https://open.spotify.com/track/'
 
         # filtering information
-        for elem in elems:
-            elem = elem.get_attribute("href")
+        for url in urls:
+            url = url.get_attribute("href")
 
             # filtering information ++
-            if elem.startswith(key):
-                print(elem + '(' + item + ')')
-                
-            if not elem.starswith(key):
-                print("item não encontrado: " + item)
-            search.close()
-            break
+            if url.startswith(key):
+                print(url + '(' + item + ')')
+                search.close()
+                arquivo = open("lista gdrive.txt", "w")
+
+                arquivo.write("Found: " + item + '(' + url + ')')
+                arquivo.close()
+                break
+
 
 if __name__ == '__main__':
     main()
