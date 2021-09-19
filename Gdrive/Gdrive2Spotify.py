@@ -12,23 +12,28 @@ Make a script that takes .mp3 from Gdrive and add that .mp3 on Spotify.
 # GDRIVE
 from __future__ import print_function
 import os.path
-from telnetlib import EC
 
 from googleapiclient.discovery import build
 from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
 
-# BROWSER IMPORTS
-from selenium import webdriver
-
 # If modifying these scopes, delete the file token.json.
 SCOPES = ['https://www.googleapis.com/auth/drive.metadata.readonly']
-
 
 # musica 1Q5gkiWnZaQ9UKgF-dtpZk9isOrfVsuTf
 # Random 1nyd0LFdYpzNEaLIIvBwc6jBSY-wpiUkr
 # Rap, eletro 11zEAVrmBwRG_urikO7uVCVV3VRRi6f4T
+
+
+# SELENIUM
+from selenium import webdriver
+
+BING = "https://www.bing.com/search?q={0}"
+GOOGLE = "https://www.google.com/search?q={0}"
+YANDEX = "https://yandex.com/search/?text={0}"
+YAHOO = "https://search.yahoo.com/search;_ylt=A0geKei5QEZhFKAAL1xDDWVH;_ylc=X1MDMTE5NzgwNDg2NwRfcgMyBGZyAwRmcjIDcDpzLHY6c2ZwLG06c2ItdG9wBGdwcmlkAzJVOExwOFkuU1ZXUG4uazRvTDZHZUEEbl9yc2x0AzAEbl9zdWdnAzAEb3JpZ2luA3NlYXJjaC55YWhvby5jb20EcG9zAzAEcHFzdHIDBHBxc3RybAMwBHFzdHJsAzgxBHF1ZXJ5A0h1bmdyaWElMjBIaXAlMjBIb3AlMjAtJTIwQW1vciUyMGUlMjBGJUMzJUE5JTIwKE9mZmljaWFsJTIwTXVzaWMlMjBWaWRlbyklMjAlMjNDaGVpcm9Eb01hdG8lMjAobXAzY3V0Lm5ldCkubXAzBHRfc3RtcAMxNjMxOTk0MDQ2?p={0}&fr=sfp&fr2=p%3As%2Cv%3Asfp%2Cm%3Asb-top&iscqry="
+engines = [YAHOO, YANDEX, GOOGLE, BING]
 
 
 def rec(drive):
@@ -124,14 +129,18 @@ def main():
 
     lista = retrieve(drive)
 
-    browser(lista)
+    configBrowser(lista)
 
 
-def browser(lista):
-    # options created
+def configBrowser(lista):
+
+    # options and config
     options = webdriver.ChromeOptions()
+    count = 0
+    key = 'https://open.spotify.com/track/'
 
     for item in lista:
+        count += 1
         options.add_argument('--headless')
         options.add_argument('--disable-extensions')
         options.add_argument('--profile-directory=Default')
@@ -142,29 +151,49 @@ def browser(lista):
         options.add_experimental_option('useAutomationExtension', False)
 
         # connection
-        search = webdriver.Chrome(executable_path='chromedriver.exe', options=options)
-        search.delete_all_cookies()
-        q = item
+        driver = webdriver.Chrome(executable_path='chromedriver.exe')
+        driver.delete_all_cookies()
+        q = "spotify track " + "Unlike Pluto ft. Why Mona - Happy Together (Cover)_160k.mp3"
         q.replace(' ', '')
 
-        # gathering information
-        search.get("https://www.google.com/search?q=" + 'spotify track ' + q)
-        urls = search.find_elements_by_xpath("//a[@href]")
-        key = 'https://open.spotify.com/track/'
+        Browser(driver, q, engines[0], key, item, count)
+
+
+def Browser(driver, q, SE, key, item, count):
+
+    # gathering information
+    driver.get(SE.format(q))  # starts the chrome and searches the query
+    driver.implicitly_wait(2)
+
+    if driver.current_url == "https://www.google.com/sorry/index?continue=":
+        Browser(driver, q, engines[engines.index(SE)+1], key, item, count)  # uses another search engine
+    else:
+        tags = driver.find_elements_by_xpath("//a[@href]")  # find <a </a>
+        tagcounter = 0
 
         # filtering information
-        for url in urls:
-            url = url.get_attribute("href")
+        for tag in tags:  # for every tag in tags[]
+            tagcounter += 1
+            tag = tag.get_attribute("href")  # i want only href="" in <a </a>
 
             # filtering information ++
-            if url.startswith(key):
-                print(url + '(' + item + ')')
-                search.close()
-                arquivo = open("lista gdrive.txt", "w")
+            if tag.startswith(key):  # if that url start with the key that i want to
+                print(tag + '(' + item + ')' + ' ' + str(count))
 
-                arquivo.write("Found: " + item + '(' + url + ')')
-                arquivo.close()
-                break
+                with open('lista gdrive.txt', 'a', encoding='utf-8') as arquivo:  # write on a txt
+                    arquivo.write(str(count) + ' ' + item + ' (' + tag + ')\n')
+                    arquivo.close()
+                    driver.close()
+                    break
+
+            elif len(tags) == tagcounter:  # if it is at the end of tags[] then
+                if engines.index(SE) != len(engines):  # if hasn't ended the searches engine[]
+                    Browser(driver, q, engines[engines.index(SE)+1], key, item, count)  # uses another search engine
+                else:
+                    print("I couldnt find " + item)
+                    with open('lista failed.txt', 'a', encoding='utf-8') as arquivo:
+                        arquivo.write(item + '\n')
+                        arquivo.close()
 
 
 if __name__ == '__main__':
