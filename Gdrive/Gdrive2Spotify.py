@@ -11,9 +11,7 @@ Make a script that takes .mp3 from Gdrive and add that .mp3 on Spotify.
 
 # GDRIVE
 from __future__ import print_function
-
 import os.path
-
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
@@ -81,7 +79,7 @@ def retrieve(drive):
     return listaItens
 
 
-def main():
+def LoginGDrive():
     creds = None
     if os.path.exists('../Tokens/token.json'):
         creds = Credentials.from_authorized_user_file('../Tokens/token.json', SCOPES)
@@ -95,8 +93,11 @@ def main():
         # Save the credentials for the next run
         with open('../Tokens/token.json', 'w') as token:
             token.write(creds.to_json())
-
     drive = build('drive', 'v3', credentials=creds)
+    return drive
+
+def main():
+    drive = LoginGDrive()
 
     lista = retrieve(drive)
 
@@ -109,30 +110,29 @@ def configBrowser(lista):
     count = 0
     key = 'https://open.spotify.com/track/'
 
+    # setting up configs
+    options.add_argument('--headless')
+    options.add_argument('--disable-extensions')
+    options.add_argument('--profile-directory=Default')
+    options.add_argument("--incognito")
+    options.add_argument("--disable-plugins-discovery")
+    options.add_argument("--start-maximized")
+    options.add_experimental_option("excludeSwitches", ["enable-automation"])
+    options.add_experimental_option('useAutomationExtension', False)
+
+    # connection
+    driver = webdriver.Chrome(executable_path='chromedriver.exe')
+
     for item in lista:
         count += 1
-        options.add_argument('--headless')
-        options.add_argument('--disable-extensions')
-        options.add_argument('--profile-directory=Default')
-        options.add_argument("--incognito")
-        options.add_argument("--disable-plugins-discovery")
-        options.add_argument("--start-maximized")
-        options.add_experimental_option("excludeSwitches", ["enable-automation"])
-        options.add_experimental_option('useAutomationExtension', False)
-
-        # connection
-        driver = webdriver.Chrome(executable_path='chromedriver.exe')
-        driver.delete_all_cookies()
         q = "spotify track " + item
         q.replace(' ', '')
+
         Browser(driver, q, engines[0], key, item, count)
 
 
 def Browser(driver, q, SE, key, item, count):
-    # gathering information
-
     driver.get(SE.format(q))  # starts the chrome and searches the query
-    driver.implicitly_wait(2)
     if driver.current_url == "https://www.google.com/sorry/index?continue=":  # if the Google block the IP
         engines.pop(engines.index(SE))  # remove it from the list
         Browser(driver, q, engines[engines.index(SE) + 1], key, item, count)  # uses another search engine
@@ -145,23 +145,20 @@ def Browser(driver, q, SE, key, item, count):
             tagcounter += 1
             tag = tag.get_attribute("href")  # i want only href in <a </a>
 
-            # filtering information ++
             if tag.startswith(key):  # if that url start with the key that i want to
                 print(tag + ' (' + item + ')' + ' ' + str(count))
 
                 with open('lista gdrive.txt', 'a', encoding='utf-8') as arquivo:  # write on a txt
                     arquivo.write(str(count) + ' ' + item + ' (' + tag + ')\n')
                     arquivo.close()
-                    driver.close()
                     break
 
             elif len(tags) == tagcounter:  # if it is at the end of tags[] then
-                if (engines.index(SE) + 1) >= len(engines):  # if hasn't ended the searches engine[]
+                if (engines.index(SE) + 1) >= len(engines):  # if hasn't ended the search engines[]
                     print("I couldnt find " + item)
                     with open('lista failed.txt', 'a', encoding='utf-8') as arquivo:
                         arquivo.write(item + '\n')
                         arquivo.close()
-                        driver.close()
                         break
                 else:
                     Browser(driver, q, engines[engines.index(SE) + 1], key, item, count)  # uses another search engine
