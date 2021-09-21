@@ -5,7 +5,6 @@ api KEY GDRIVE AIzaSyDV7ZD8MPZy44akQdQ3ixFZCllxLueGsNI
 Client ID SPOTIFY 8ad707a87c8445b481c240424ad5998c
 Client Secret SPOTIFY d00fda6a444f41cbb4e3bd5528fd8475
 
-https://imasters.com.br/back-end/google-search-usando-selenium-e-python-o-basico-sobre-selenium-python
 Make a script that takes .mp3 from Gdrive and add that .mp3 on Spotify.
 """
 
@@ -35,54 +34,14 @@ BING = "https://www.bing.com/search?q={0}"  # do not use it
 GOOGLE = "https://www.google.com/search?q={0}"
 YANDEX = "https://yandex.com/search/?text={0}"
 YAHOO = "https://search.yahoo.com/search;_ylt=A0geKei5QEZhFKAAL1xDDWVH;_ylc=X1MDMTE5NzgwNDg2NwRfcgMyBGZyAwRmcjIDcDpzLHY6c2ZwLG06c2ItdG9wBGdwcmlkAzJVOExwOFkuU1ZXUG4uazRvTDZHZUEEbl9yc2x0AzAEbl9zdWdnAzAEb3JpZ2luA3NlYXJjaC55YWhvby5jb20EcG9zAzAEcHFzdHIDBHBxc3RybAMwBHFzdHJsAzgxBHF1ZXJ5A0h1bmdyaWElMjBIaXAlMjBIb3AlMjAtJTIwQW1vciUyMGUlMjBGJUMzJUE5JTIwKE9mZmljaWFsJTIwTXVzaWMlMjBWaWRlbyklMjAlMjNDaGVpcm9Eb01hdG8lMjAobXAzY3V0Lm5ldCkubXAzBHRfc3RtcAMxNjMxOTk0MDQ2?p={0}&fr=sfp&fr2=p%3As%2Cv%3Asfp%2Cm%3Asb-top&iscqry="
-engines = [ECOSIA, DUCK, ASK, YAHOO, YANDEX, GOOGLE]
-
-
-def rec2(page_token, drive):
-    if page_token is not None:
-        while True:
-            results = drive.files().list(q="mimeType='application/vnd.google-apps.folder'",
-                                         pageSize=500,
-                                         spaces='drive',
-                                         fields='nextPageToken, files(id, name, parents)',
-                                         pageToken=page_token).execute()
-            for file in results.get('files', []):
-                if file.get('parents' == drive):
-                    return None
-                print('Found file: %s (%s)' % (file.get('name'), file.get('parents')))
-            page_token = results.get('nextPageToken', None)
-            if page_token is None:
-                break
-
-
-def retrieve(drive):
-    listaItens = []
-    count = 0
-    query_str = "mimeType='audio/mpeg' and parents in \'1nyd0LFdYpzNEaLIIvBwc6jBSY-wpiUkr\' and trashed != true"
-    page_token = None
-    while True:
-        results = drive.files().list(q=query_str,
-                                     corpora='user',
-                                     pageSize=500,
-                                     spaces='drive',
-                                     fields='nextPageToken, *',
-                                     pageToken=page_token).execute()
-        for file in results.get('files', []):
-            listaItens.append(file.get('name'))
-            count += 1
-            print('%s  ID(%s)  %s' % (file.get('name'), file.get('id'), file.get('mimeType')))
-
-        page_token = results.get('nextPageToken', None)
-        if page_token is None:
-            break
-    print("Quantidade de itens " + str(count))
-    return listaItens
+engines = [DUCK, ASK, YAHOO, YANDEX, GOOGLE]
 
 
 def LoginGDrive():
     creds = None
     if os.path.exists('../Tokens/token.json'):
         creds = Credentials.from_authorized_user_file('../Tokens/token.json', SCOPES)
+
     # If there are no (valid) credentials available, let the user log in.
     if not creds or not creds.valid:
         if creds and creds.expired and creds.refresh_token:
@@ -90,18 +49,125 @@ def LoginGDrive():
         else:
             flow = InstalledAppFlow.from_client_secrets_file('../Tokens/credentials.json', SCOPES)
             creds = flow.run_local_server(port=0)
+
         # Save the credentials for the next run
         with open('../Tokens/token.json', 'w') as token:
             token.write(creds.to_json())
     drive = build('drive', 'v3', credentials=creds)
     return drive
 
+
+def savetxt(itens, filename):
+    a = input("\nSave items into a file? Y/N ")
+    if a.startswith('y') or a.startswith('Y'):
+        if os.path.exists(filename + '.txt'):
+            os.remove(filename + '.txt')
+        with open(filename + '.txt', 'a', encoding='utf-8') as arquivo:
+            for item in itens:
+                arquivo.write(item + '\n')
+        print("Files saved!")
+    elif a.startswith('n') or a.startswith('N'):
+        return print('\n')
+
+
+def all(drive):
+    listaItens = []
+    count = 0
+    query_str = "mimeType='audio/mpeg' and trashed != true"
+    page_token = None
+
+    while True:
+        results = drive.files().list(q=query_str,
+                                     corpora='user',
+                                     pageSize=500,
+                                     spaces='drive',
+                                     fields='nextPageToken, *',
+                                     pageToken=page_token).execute()
+        for index, item in enumerate(results.get('files', []), count + 1):
+            count += 1
+            listaItens.append(item.get('name') + ' ' + item.get('id'))
+            print('{} {}'.format(index, item.get('name')))
+
+        page_token = results.get('nextPageToken', None)
+        if page_token is None:
+            break
+
+    savetxt(listaItens, 'allMusics')
+    return listaItens
+
+
+def especific(drive):
+    parentslist = None  # id parents item
+    listaItens = []  # items itself
+    count = 0
+    query_str = "mimeType='audio/mpeg' and trashed != true"  # query to be send
+    page_token = None
+
+    while True:
+        results = drive.files().list(q=query_str,
+                                     corpora='user',
+                                     pageSize=500,
+                                     spaces='drive',
+                                     fields='nextPageToken, *',
+                                     pageToken=page_token).execute()
+        for index, item in enumerate(results.get('files', []), count + 1):  # for each file in files[]
+            if item.get('parents') is not parentslist:
+                parentslist.append(item.get('parents'))
+                count += 1
+
+        page_token = results.get('nextPageToken', None)
+        if page_token is None:
+            break
+
+    print(parentslist)
+    b(parentslist, drive, count)
+    return listaItens
+
+
+def b(parentslist, drive, count):
+    if parentslist != None:
+        q = 'and parents in \'' + parentslist + '\''
+        listaItens = []  # items itself
+        count = 0
+        query_str = "mimeType='application/vnd.google-apps.folder' and trashed != true {}".format(q)  # query to be send
+        page_token = None
+
+        while True:
+            results = drive.files().list(q=query_str,
+                                         corpora='user',
+                                         pageSize=500,
+                                         spaces='drive',
+                                         fields='nextPageToken, *',
+                                         pageToken=page_token).execute()
+            for index, item in enumerate(results.get('files', []), count + 1):  # for each file in files[]
+                if not parentslist.__contains__(item.get('parents')):
+                    parentslist.append(item.get('parents'))
+                    print(item.get['name'])
+                    count += 1
+
+            page_token = results.get('nextPageToken', None)
+            if page_token is None:
+                break
+
+        print("Quantidade de itens " + str(count))
+        print(parentslist)
+        print('\n')
+        b(parentslist, drive, count)
+
+
 def main():
     drive = LoginGDrive()
-
-    lista = retrieve(drive)
-
-    configBrowser(lista)
+    lista = None
+    while True:
+        print("[1] Search for all musics\n[2] search for musics in a specific folder\n[3] Quit")
+        choice = input()
+        if choice == '1':
+            lista = all(drive)
+        elif choice == '2':
+            lista = especific(drive)
+        elif choice == '3':
+            break
+    #configBrowser(lista)
 
 
 def configBrowser(lista):
@@ -121,7 +187,7 @@ def configBrowser(lista):
     options.add_experimental_option('useAutomationExtension', False)
 
     # connection
-    driver = webdriver.Chrome(executable_path='chromedriver.exe')
+    driver = webdriver.Chrome(executable_path='chromedriver.exe', options=options)
 
     for item in lista:
         count += 1
