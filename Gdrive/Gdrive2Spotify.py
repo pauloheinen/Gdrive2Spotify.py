@@ -16,13 +16,7 @@ from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 
-# If modifying these scopes, delete the file token.json.
 SCOPES = ['https://www.googleapis.com/auth/drive.metadata.readonly']
-
-# musica 1Q5gkiWnZaQ9UKgF-dtpZk9isOrfVsuTf
-# Random 1nyd0LFdYpzNEaLIIvBwc6jBSY-wpiUkr
-# Rap, eletro 11zEAVrmBwRG_urikO7uVCVV3VRRi6f4T
-
 
 # SELENIUM
 from selenium import webdriver
@@ -30,11 +24,15 @@ from selenium import webdriver
 DUCK = "https://duckduckgo.com/?q={0}"
 ECOSIA = "https://www.ecosia.org/search?q={0}"
 ASK = "https://www.ask.com/web?q={0}"
-BING = "https://www.bing.com/search?q={0}"  # do not use it
 GOOGLE = "https://www.google.com/search?q={0}"
 YANDEX = "https://yandex.com/search/?text={0}"
 YAHOO = "https://search.yahoo.com/search;_ylt=A0geKei5QEZhFKAAL1xDDWVH;_ylc=X1MDMTE5NzgwNDg2NwRfcgMyBGZyAwRmcjIDcDpzLHY6c2ZwLG06c2ItdG9wBGdwcmlkAzJVOExwOFkuU1ZXUG4uazRvTDZHZUEEbl9yc2x0AzAEbl9zdWdnAzAEb3JpZ2luA3NlYXJjaC55YWhvby5jb20EcG9zAzAEcHFzdHIDBHBxc3RybAMwBHFzdHJsAzgxBHF1ZXJ5A0h1bmdyaWElMjBIaXAlMjBIb3AlMjAtJTIwQW1vciUyMGUlMjBGJUMzJUE5JTIwKE9mZmljaWFsJTIwTXVzaWMlMjBWaWRlbyklMjAlMjNDaGVpcm9Eb01hdG8lMjAobXAzY3V0Lm5ldCkubXAzBHRfc3RtcAMxNjMxOTk0MDQ2?p={0}&fr=sfp&fr2=p%3As%2Cv%3Asfp%2Cm%3Asb-top&iscqry="
 engines = [DUCK, ASK, YAHOO, YANDEX, GOOGLE]
+
+
+# musica 1Q5gkiWnZaQ9UKgF-dtpZk9isOrfVsuTf
+# Random 1nyd0LFdYpzNEaLIIvBwc6jBSY-wpiUkr
+# Rap, eletro 11zEAVrmBwRG_urikO7uVCVV3VRRi6f4T
 
 
 def LoginGDrive():
@@ -57,16 +55,16 @@ def LoginGDrive():
     return drive
 
 
-def savetxt(itens, filename):
+def savetxt(items, filename):  # list items [] // filename of the savefile.txt
     a = input("\nSave items into a file? Y/N ")
     if a.startswith('y') or a.startswith('Y'):
-        if os.path.exists(filename + '.txt'):
-            os.remove(filename + '.txt')
-        with open(filename + '.txt', 'a', encoding='utf-8') as arquivo:
-            for item in itens:
+        if os.path.exists(filename + '.txt'):  # if the file already exists
+            os.remove(filename + '.txt')  # delete it
+        with open(filename + '.txt', 'a', encoding='utf-8') as arquivo:  # open the file or create
+            for item in items:  # write every item on it
                 arquivo.write(item + '\n')
         print("Files saved!")
-    elif a.startswith('n') or a.startswith('N'):
+    elif a.startswith('n') or a.startswith('N'):  # in case of not save the list
         return print('\n')
 
 
@@ -92,12 +90,12 @@ def all(drive):
         if page_token is None:
             break
 
-    savetxt(listaItens, 'allMusics')
+    # savetxt(listaItens, 'allMusics')
     return listaItens
 
 
 def especific(drive):
-    parentslist = None  # id parents item
+    parentsid = []  # id parents item
     listaItens = []  # items itself
     count = 0
     query_str = "mimeType='audio/mpeg' and trashed != true"  # query to be send
@@ -111,48 +109,34 @@ def especific(drive):
                                      fields='nextPageToken, *',
                                      pageToken=page_token).execute()
         for index, item in enumerate(results.get('files', []), count + 1):  # for each file in files[]
-            if item.get('parents') is not parentslist:
-                parentslist.append(item.get('parents'))
-                count += 1
+            for parents in item.get('parents'):  # for each item in sublist of files[]
+                if not parentsid.__contains__(parents):
+                    parentsid.append(parents)
+                    count += 1
 
         page_token = results.get('nextPageToken', None)
         if page_token is None:
             break
 
-    print(parentslist)
-    b(parentslist, drive, count)
-    return listaItens
+    print("Found " + str(len(parentsid)) + " items")
+
+    while parentsid is not None:
+        print(search(drive, parentsid[0]))
+        parentsid.pop(0)
 
 
-def b(parentslist, drive, count):
-    if parentslist != None:
-        q = 'and parents in \'' + parentslist + '\''
-        listaItens = []  # items itself
-        count = 0
-        query_str = "mimeType='application/vnd.google-apps.folder' and trashed != true {}".format(q)  # query to be send
-        page_token = None
+def search(drive, parentsid):
+    page_token = None
 
-        while True:
-            results = drive.files().list(q=query_str,
-                                         corpora='user',
-                                         pageSize=500,
-                                         spaces='drive',
-                                         fields='nextPageToken, *',
-                                         pageToken=page_token).execute()
-            for index, item in enumerate(results.get('files', []), count + 1):  # for each file in files[]
-                if not parentslist.__contains__(item.get('parents')):
-                    parentslist.append(item.get('parents'))
-                    print(item.get['name'])
-                    count += 1
-
-            page_token = results.get('nextPageToken', None)
-            if page_token is None:
-                break
-
-        print("Quantidade de itens " + str(count))
-        print(parentslist)
-        print('\n')
-        b(parentslist, drive, count)
+    while True:
+        results = drive.files().list(q="trashed != true", corpora='user', pageSize=500, spaces='drive',
+                                     fields='nextPageToken, *', pageToken=page_token).execute()
+        for item in results.get('files', []):  # for each file in files[]
+            if item.get('id') == parentsid:
+                return item
+        page_token = results.get('nextPageToken', None)
+        if page_token is None:
+            break
 
 
 def main():
@@ -167,7 +151,7 @@ def main():
             lista = especific(drive)
         elif choice == '3':
             break
-    #configBrowser(lista)
+    # configBrowser(lista)
 
 
 def configBrowser(lista):
