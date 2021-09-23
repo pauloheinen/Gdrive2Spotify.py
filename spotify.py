@@ -14,25 +14,48 @@ import requests
 import spotipy
 from spotipy.oauth2 import *
 
-sp = spotipy.Spotify(auth_manager=SpotifyOAuth(client_id=client_id,
-                                               client_secret=client_secret,
-                                               redirect_uri=redirect_uri
-                                               ))
 
-usr = sp.current_user()
-opcao = 0
-while (opcao != '30' or opcao != 31): # seta cima // baixo
-    for item in usr:
-        print('\r[' + item + ']')
-    opcao = input()
+# login into spotify profile
+def login():
+    sp = spotipy.Spotify(auth_manager=SpotifyOAuth(client_id=client_id,
+                                                   client_secret=client_secret,
+                                                   redirect_uri=redirect_uri
+                                                   ))
+    return sp
 
-playlists = sp.current_user_playlists()
-opcao = []
-while playlists:
-    for i, playlist in enumerate(playlists['items']):
-        print("%4d %s %s" % (i + 1 + playlists['offset'], playlist['uri'],  playlist['name']))
+
+def search(playlists, id):
+    while playlists:
+        for i, item in enumerate(playlists['items']):
+            print(str(i), playlist['name'])
+        if item['id'] == id:
+            return item
     if playlists['next']:
         playlists = sp.next(playlists)
     else:
         playlists = None
-    opcao = int(input("Seleção: "))
+
+
+def add(playlists):
+    print("Add into which playlist? ")
+    while playlists:
+        for i, playlist in enumerate(playlists['items']):
+            print(str(i), playlist['name'])
+        if playlists['next']:
+            playlists = sp.next(playlists)
+        else:
+            playlists = None
+        opcao = int(input("Opção: "))
+        search(playlist, )
+
+
+def main():
+    sp = login()  # sp (spotify) service
+    user = sp.current_user()
+
+    playlists = sp.current_user_playlists()
+    add(playlists)
+
+
+if __name__ == '__main__':
+    main()
