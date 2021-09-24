@@ -19,18 +19,21 @@ def login():
                                                    client_secret=client_secret,
                                                    redirect_uri=redirect_uri
                                                    ))
+    print(sp.me)
     return sp
 
 
-def add(playlists, sp):
+def add(user, playlists, sp):
     print("Add into which playlist? ")
     while playlists:
+        # https://developer.spotify.com/documentation/web-api/reference/#category-playlists
         for i, playlist in enumerate(playlists['items']):
             print(str(i+1), playlist['name'])
 
         opcao = int(input("Opção: "))
         opcao = playlists['items'][opcao-1]['id']
-        sp.user_playlist_add_tracks(sp.current_user(), opcao, '1pAyyxlkPuGnENdj4g7Y4f', 1)
+        print(opcao)
+        sp.user_playlist_add_tracks(user=user, playlist_id=opcao, tracks="3479kk78dx3GFt048Udq54")
 
 
 
@@ -39,7 +42,7 @@ def main():
     user = sp.current_user()  # user
 
     playlists = sp.current_user_playlists()
-    add(playlists, sp)
+    add(user, playlists, sp)
 
 
 if __name__ == '__main__':
