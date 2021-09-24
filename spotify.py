@@ -30,8 +30,8 @@ def add(playlists, sp):
 
         opcao = int(input("Opção: "))
         opcao = playlists['items'][opcao-1]['id']
-        sp.user_playlist_add_tracks(opcao, )
-        sp.user_playlist_add_tracks()
+        sp.user_playlist_add_tracks(sp.current_user(), opcao, '1pAyyxlkPuGnENdj4g7Y4f', 1)
+
 
 
 def main():
