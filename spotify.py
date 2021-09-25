@@ -13,37 +13,34 @@ import spotipy
 from spotipy.oauth2 import *
 
 
-# login into spotify profile
-def login():
-    sp = spotipy.Spotify(auth_manager=SpotifyOAuth(client_id=client_id,
-                                                   client_secret=client_secret,
-                                                   redirect_uri=redirect_uri
-                                                   ))
-    print(sp.me)
-    return sp
+class Spotify:
 
+    def __init__(self):
+        self.sp = self.login(Spotify)
+        self.user = self.sp.current_user()
+        self.playlists = self.sp.current_user_playlists()
 
-def add(user, playlists, sp):
-    print("Add into which playlist? ")
-    while playlists:
-        # https://developer.spotify.com/documentation/web-api/reference/#category-playlists
-        for i, playlist in enumerate(playlists['items']):
-            print(str(i+1), playlist['name'])
+    # login into spotify profile
+    def login(self):
+        sp = spotipy.Spotify(auth_manager=SpotifyOAuth(client_id=client_id,
+                                                       client_secret=client_secret,
+                                                       redirect_uri=redirect_uri,
+                                                       scope="user-library-read playlist-modify-private playlist-modify-public"
+                                                       ))
+        print("Logged")
+        return sp
+
+    def add(self, item, opcao):
+        tracks = ['{}'.format(item)]
+        self.sp.playlist_add_items(opcao, tracks, None)
+
+    def playlists(self):
+        print("Add into which playlist? ")
+        for i, playlist in enumerate(self.playlists['items']):
+            print(str(i + 1), playlist['name'])
 
         opcao = int(input("Opção: "))
-        opcao = playlists['items'][opcao-1]['id']
-        print(opcao)
-        sp.user_playlist_add_tracks(user=user, playlist_id=opcao, tracks="3479kk78dx3GFt048Udq54")
+        opcao = self.playlists['items'][opcao - 1]['id']
+        return opcao
 
 
-
-def main():
-    sp = login()  # sp (spotify) service
-    user = sp.current_user()  # user
-
-    playlists = sp.current_user_playlists()
-    add(user, playlists, sp)
-
-
-if __name__ == '__main__':
-    main()

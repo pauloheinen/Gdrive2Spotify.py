@@ -6,18 +6,20 @@ Client Secret SPOTIFY d00fda6a444f41cbb4e3bd5528fd8475
 Make a script that takes .mp3 from Gdrive and add that .mp3 on Spotify.
 """
 
-
-
-
 # GDRIVE
 from __future__ import print_function
 import os.path
+
+import spotify
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 
 SCOPES = ['https://www.googleapis.com/auth/drive.metadata.readonly']
+
+# Spotify
+import spotify as spot
 
 # SELENIUM
 from selenium import webdriver
@@ -28,6 +30,7 @@ GOOGLE = "https://www.google.com/search?q={0}"
 YANDEX = "https://yandex.com/search/?text={0}"
 YAHOO = "https://search.yahoo.com/search;_ylt=A0geKei5QEZhFKAAL1xDDWVH;_ylc=X1MDMTE5NzgwNDg2NwRfcgMyBGZyAwRmcjIDcDpzLHY6c2ZwLG06c2ItdG9wBGdwcmlkAzJVOExwOFkuU1ZXUG4uazRvTDZHZUEEbl9yc2x0AzAEbl9zdWdnAzAEb3JpZ2luA3NlYXJjaC55YWhvby5jb20EcG9zAzAEcHFzdHIDBHBxc3RybAMwBHFzdHJsAzgxBHF1ZXJ5A0h1bmdyaWElMjBIaXAlMjBIb3AlMjAtJTIwQW1vciUyMGUlMjBGJUMzJUE5JTIwKE9mZmljaWFsJTIwTXVzaWMlMjBWaWRlbyklMjAlMjNDaGVpcm9Eb01hdG8lMjAobXAzY3V0Lm5ldCkubXAzBHRfc3RtcAMxNjMxOTk0MDQ2?p={0}&fr=sfp&fr2=p%3As%2Cv%3Asfp%2Cm%3Asb-top&iscqry="
 engines = [DUCK, ASK, YAHOO, YANDEX, GOOGLE]
+
 
 # musica 1Q5gkiWnZaQ9UKgF-dtpZk9isOrfVsuTf
 # Random 1nyd0LFdYpzNEaLIIvBwc6jBSY-wpiUkr
@@ -55,18 +58,20 @@ def LoginGDrive():
 
 
 def savetxt(items, filename):  # list items [] // filename of the savefile.txt
-    if input("\nSave items into a file? (Y/N) ").lower().startswith('y'):
-        if os.path.exists(filename + '.txt'):  # if the file already exists
-            os.remove(filename + '.txt')  # delete it
-        with open(filename + '.txt', 'a', encoding='utf-8') as arquivo:  # open the file or create
-            for item in items:  # write every item on it
-                arquivo.write(item + '\n')
-        print("Files saved!")
-    elif input("\nSave items into a file? (Y/N) ").lower().startswith('n'):  # in case of not save the list
-        return print('\n')
+    ask = input("\nSave items into a file? (Y/N) ").lower()
+    if ask == 'y' or ask == 'n':
+        if ask == 'y':
+            if os.path.exists(filename + '.txt'):  # if the file already exists
+                os.remove(filename + '.txt')  # delete it
+            with open(filename + '.txt', 'a', encoding='utf-8') as arquivo:  # open the file or create
+                for item in items:  # write every item on it
+                    arquivo.write(item + '\n')
+            print("Files saved!")
+    else:
+        savetxt(items, filename)
 
 
-def all(drive, folderID):
+def all(drive, txtname, folderID):
     listaItens = []
     count = 0
     query_str = "mimeType='audio/mpeg' and trashed != true"
@@ -89,29 +94,26 @@ def all(drive, folderID):
         page_token = results.get('nextPageToken', None)
         if page_token is None:
             break
-
-    # savetxt(listaItens, 'allMusics')
+    savetxt(listaItens, txtname)
     return listaItens
 
 
-def especific(drive):
+def folderOnly(drive, sp):
+    listaItens = []
     parentslist = []  # id parents item
     count = 0
     query_str = "mimeType='audio/mpeg' and trashed != true"  # query to be send
     page_token = None
 
     while True:
-        results = drive.files().list(q=query_str,
-                                     corpora='user',
-                                     pageSize=500,
-                                     spaces='drive',
+        results = drive.files().list(q=query_str, corpora='user', pageSize=500, spaces='drive',
                                      fields='nextPageToken, *',
                                      pageToken=page_token).execute()
         for index, item in enumerate(results.get('files', []), count):  # for each file in files[]
             for parents in item.get('parents'):  # for each item in sublist of files[]
-                if not parentslist.__contains__(parents):
-                    parentslist.append(parents)
-                    count += 1
+                if not parentslist.__contains__(parents):  # if parents[] not contains musics -> parentsID
+                    parentslist.append(parents)  # add into
+                    count += 1  # +1 item
 
         page_token = results.get('nextPageToken', None)
         if page_token is None:
@@ -128,16 +130,16 @@ def especific(drive):
         choice -= 1
         if choice == -1:
             break
+
         elif 0 <= choice < len(parentslist):
-            all(drive, parentslist[choice])
-            if input("\nAdicionar ao Spotify esses itens? (Y/N) ").lower().startswith('y'):
-                print("Spotify :)")
-                # request to spotify
-                # to be implemented
-            elif input("\nSave items into a file? (Y/N) ").lower().startswith('n'):
-                break
-        else:
-            print("Valor inválido!")
+            listaItens = all(drive, search(drive, parentslist[choice]).get('name'), parentslist[choice])
+
+            ask = input("\nAdicionar ao Spotify esses itens? (Y/N) ").lower()
+            if ask == 'y' or ask == 'n':
+                if ask == 'y':
+                    configBrowser(listaItens, sp)
+            else:
+                continue
 
 
 def search(drive, parentsid):
@@ -155,22 +157,22 @@ def search(drive, parentsid):
 
 
 def main():
+    spotify = spot.Spotify
+    sp = spotify.login(spotify)
+
     drive = LoginGDrive()
-    lista = None
     while True:
         print("\n[1] Search for all musics\n[2] search for musics in a specific folder\n[3] Quit")
         choice = input("Opção: ")
         if choice == '1':
-            lista = all(drive, None)
+            all(drive, "Allmusics", None)
         elif choice == '2':
-            lista = especific(drive)
+            folderOnly(drive, spotify)
         elif choice == '3':
             break
 
-    # configBrowser(lista)
 
-
-def configBrowser(lista):
+def configBrowser(lista, sp):
     # options and config
     options = webdriver.ChromeOptions()
     count = 0
@@ -194,10 +196,10 @@ def configBrowser(lista):
         q = "spotify track " + item
         q.replace(' ', '')
 
-        Browser(driver, q, engines[0], key, item, count)
+        Browser(driver, sp, q, engines[0], key, item, count)
 
 
-def Browser(driver, q, SE, key, item, count):
+def Browser(driver, sp, q, SE, key, item, count):
     driver.get(SE.format(q))  # starts the chrome and searches the query
     if driver.current_url == "https://www.google.com/sorry/index?continue=":  # if the Google block the IP
         engines.pop(engines.index(SE))  # remove it from the list
@@ -213,16 +215,16 @@ def Browser(driver, q, SE, key, item, count):
 
             if tag.startswith(key):  # if that url start with the key that i want to
                 print(tag + ' (' + item + ')' + ' ' + str(count))
+                # CALL SPOTIFY CLASS METHOD TO ADD ITEMS FROM LISTA
+                # BEING IMPLEMENTED
+                # sp.playlists()
+                # sp.add(spotify.Spotify, lista=tag, )
 
-                with open('lista gdrive.txt', 'a', encoding='utf-8') as arquivo:  # write on a txt
-                    arquivo.write(str(count) + ' ' + item + ' (' + tag + ')\n')
-                    arquivo.close()
-                    break
 
             elif len(tags) == tagcounter:  # if it is at the end of tags[] then
                 if (engines.index(SE) + 1) >= len(engines):  # if hasn't ended the search engines[]
                     print("I couldnt find " + item)
-                    with open('lista failed.txt', 'a', encoding='utf-8') as arquivo:
+                    with open('Failed-list.txt', 'a', encoding='utf-8') as arquivo:
                         arquivo.write(item + '\n')
                         arquivo.close()
                         break
