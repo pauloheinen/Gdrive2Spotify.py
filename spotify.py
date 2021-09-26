@@ -15,32 +15,37 @@ from spotipy.oauth2 import *
 
 class Spotify:
 
-    def __init__(self):
-        self.sp = self.login(Spotify)
-        self.user = self.sp.current_user()
-        self.playlists = self.sp.current_user_playlists()
-
-    # login into spotify profile
-    def login(self):
-        sp = spotipy.Spotify(auth_manager=SpotifyOAuth(client_id=client_id,
-                                                       client_secret=client_secret,
-                                                       redirect_uri=redirect_uri,
-                                                       scope="user-library-read playlist-modify-private playlist-modify-public"
-                                                       ))
-        print("Logged")
-        return sp
+    def __init__(self, splogin):
+        self.__user = splogin.current_user()
+        self.playlist = splogin.current_user_playlists()
 
     def add(self, item, opcao):
         tracks = ['{}'.format(item)]
-        self.sp.playlist_add_items(opcao, tracks, None)
-
+        try:
+            splogin.playlist_add_items(opcao, tracks, None)
+        except:
+            print("I couldnt find: " + tracks[0])
+            pass
     def playlists(self):
         print("Add into which playlist? ")
-        for i, playlist in enumerate(self.playlists['items']):
-            print(str(i + 1), playlist['name'])
+        for i, item in enumerate(self.playlist['items']):
+            print(str(i + 1), item['name'])
 
         opcao = int(input("Opção: "))
-        opcao = self.playlists['items'][opcao - 1]['id']
+        opcao = self.playlist['items'][opcao - 1]['id']
         return opcao
 
 
+# login into spotify profile
+def login():
+    spotify = spotipy.Spotify(auth_manager=SpotifyOAuth(client_id=client_id,
+                                                        client_secret=client_secret,
+                                                        redirect_uri=redirect_uri,
+                                                        scope="user-library-read playlist-modify-private playlist-modify-public"
+                                                        ))
+    print("Logged")
+    return spotify
+
+
+splogin = login()  # take spotify's api methods
+sp = Spotify(splogin)  # take my own build class methods

@@ -9,17 +9,11 @@ Make a script that takes .mp3 from Gdrive and add that .mp3 on Spotify.
 # GDRIVE
 from __future__ import print_function
 import os.path
-
-import spotify
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
-
 SCOPES = ['https://www.googleapis.com/auth/drive.metadata.readonly']
-
-# Spotify
-import spotify as spot
 
 # SELENIUM
 from selenium import webdriver
@@ -31,6 +25,8 @@ YANDEX = "https://yandex.com/search/?text={0}"
 YAHOO = "https://search.yahoo.com/search;_ylt=A0geKei5QEZhFKAAL1xDDWVH;_ylc=X1MDMTE5NzgwNDg2NwRfcgMyBGZyAwRmcjIDcDpzLHY6c2ZwLG06c2ItdG9wBGdwcmlkAzJVOExwOFkuU1ZXUG4uazRvTDZHZUEEbl9yc2x0AzAEbl9zdWdnAzAEb3JpZ2luA3NlYXJjaC55YWhvby5jb20EcG9zAzAEcHFzdHIDBHBxc3RybAMwBHFzdHJsAzgxBHF1ZXJ5A0h1bmdyaWElMjBIaXAlMjBIb3AlMjAtJTIwQW1vciUyMGUlMjBGJUMzJUE5JTIwKE9mZmljaWFsJTIwTXVzaWMlMjBWaWRlbyklMjAlMjNDaGVpcm9Eb01hdG8lMjAobXAzY3V0Lm5ldCkubXAzBHRfc3RtcAMxNjMxOTk0MDQ2?p={0}&fr=sfp&fr2=p%3As%2Cv%3Asfp%2Cm%3Asb-top&iscqry="
 engines = [DUCK, ASK, YAHOO, YANDEX, GOOGLE]
 
+# SPOTIFY
+import spotify
 
 # musica 1Q5gkiWnZaQ9UKgF-dtpZk9isOrfVsuTf
 # Random 1nyd0LFdYpzNEaLIIvBwc6jBSY-wpiUkr
@@ -58,15 +54,17 @@ def LoginGDrive():
 
 
 def savetxt(items, filename):  # list items [] // filename of the savefile.txt
+    filePath = filename + '-GDrive.txt'
     ask = input("\nSave items into a file? (Y/N) ").lower()
-    if ask == 'y' or ask == 'n':
-        if ask == 'y':
-            if os.path.exists(filename + '.txt'):  # if the file already exists
-                os.remove(filename + '.txt')  # delete it
-            with open(filename + '.txt', 'a', encoding='utf-8') as arquivo:  # open the file or create
-                for item in items:  # write every item on it
-                    arquivo.write(item + '\n')
-            print("Files saved!")
+    if ask.isascii():
+        if ask == 'y' or ask == 'n':
+            if ask == 'y':
+                if os.path.exists(filePath):  # if the file already exists
+                    os.remove(filePath)  # delete it
+                with open(filePath, 'a', encoding='utf-8') as arquivo:  # open the file or create
+                    for item in items:  # write every item on it
+                        arquivo.write(item + '\n')
+                print("Files saved!")
     else:
         savetxt(items, filename)
 
@@ -135,11 +133,12 @@ def folderOnly(drive, sp):
             listaItens = all(drive, search(drive, parentslist[choice]).get('name'), parentslist[choice])
 
             ask = input("\nAdicionar ao Spotify esses itens? (Y/N) ").lower()
-            if ask == 'y' or ask == 'n':
-                if ask == 'y':
-                    configBrowser(listaItens, sp)
-            else:
-                continue
+            if ask.isascii():
+                if ask == 'y' or ask == 'n':
+                    if ask == 'y':
+                        configBrowser(listaItens, sp)
+                else:
+                    continue
 
 
 def search(drive, parentsid):
@@ -157,9 +156,7 @@ def search(drive, parentsid):
 
 
 def main():
-    spotify = spot.Spotify
-    sp = spotify.login(spotify)
-
+    sp = spotify.sp
     drive = LoginGDrive()
     while True:
         print("\n[1] Search for all musics\n[2] search for musics in a specific folder\n[3] Quit")
@@ -167,7 +164,7 @@ def main():
         if choice == '1':
             all(drive, "Allmusics", None)
         elif choice == '2':
-            folderOnly(drive, spotify)
+            folderOnly(drive, sp)
         elif choice == '3':
             break
 
@@ -176,6 +173,7 @@ def configBrowser(lista, sp):
     # options and config
     options = webdriver.ChromeOptions()
     count = 0
+    opcao = sp.playlists()
     key = 'https://open.spotify.com/track/'
 
     # setting up configs
@@ -196,14 +194,14 @@ def configBrowser(lista, sp):
         q = "spotify track " + item
         q.replace(' ', '')
 
-        Browser(driver, sp, q, engines[0], key, item, count)
+        Browser(driver, sp, opcao, q, engines[0], key, item, count)
 
 
-def Browser(driver, sp, q, SE, key, item, count):
+def Browser(driver, sp, opcao, q, SE, key, item, count):
     driver.get(SE.format(q))  # starts the chrome and searches the query
     if driver.current_url == "https://www.google.com/sorry/index?continue=":  # if the Google block the IP
         engines.pop(engines.index(SE))  # remove it from the list
-        Browser(driver, q, engines[engines.index(SE) + 1], key, item, count)  # uses another search engine
+        Browser(driver, sp, opcao, q, engines[engines.index(SE) + 1], key, item, count)  # uses another search engine
     else:
         tags = driver.find_elements_by_xpath("//a[@href]")  # find <a </a>
         tagcounter = 0
@@ -214,12 +212,11 @@ def Browser(driver, sp, q, SE, key, item, count):
             tag = tag.get_attribute("href")  # i want only href in <a </a>
 
             if tag.startswith(key):  # if that url start with the key that i want to
-                print(tag + ' (' + item + ')' + ' ' + str(count))
-                # CALL SPOTIFY CLASS METHOD TO ADD ITEMS FROM LISTA
-                # BEING IMPLEMENTED
-                # sp.playlists()
-                # sp.add(spotify.Spotify, lista=tag, )
-
+                driver.get(tag)
+                tag = driver.current_url
+                tag.strip('https://open.spotify.com/track/')
+                sp.add(item=tag, opcao=opcao)
+                break
 
             elif len(tags) == tagcounter:  # if it is at the end of tags[] then
                 if (engines.index(SE) + 1) >= len(engines):  # if hasn't ended the search engines[]
@@ -229,7 +226,7 @@ def Browser(driver, sp, q, SE, key, item, count):
                         arquivo.close()
                         break
                 else:
-                    Browser(driver, q, engines[engines.index(SE) + 1], key, item, count)  # uses another search engine
+                    Browser(driver, sp, opcao, q, engines[engines.index(SE) + 1], key, item, count)  # uses another search engine
 
 
 if __name__ == '__main__':
