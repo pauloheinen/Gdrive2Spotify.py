@@ -13,6 +13,7 @@ from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
+
 SCOPES = ['https://www.googleapis.com/auth/drive.metadata.readonly']
 
 # SELENIUM
@@ -28,18 +29,20 @@ engines = [DUCK, ASK, YAHOO, YANDEX, GOOGLE]
 # SPOTIFY
 import spotify
 
+
 # musica 1Q5gkiWnZaQ9UKgF-dtpZk9isOrfVsuTf
 # Random 1nyd0LFdYpzNEaLIIvBwc6jBSY-wpiUkr
 # Rap, eletro 11zEAVrmBwRG_urikO7uVCVV3VRRi6f4T
 
 
+#  login into Google Drive
 def LoginGDrive():
     creds = None
-    if os.path.exists('../Tokens/token.json'):
-        creds = Credentials.from_authorized_user_file('../Tokens/token.json', SCOPES)
+    if os.path.exists('../Tokens/token.json'):  # if you're already logged sometime
+        creds = Credentials.from_authorized_user_file('../Tokens/token.json', SCOPES)  # load the credentials
 
     # If there are no (valid) credentials available, let the user log in.
-    if not creds or not creds.valid:
+    if not creds or not creds.valid:  # if you havent logged or isnt valid credentials
         if creds and creds.expired and creds.refresh_token:
             creds.refresh(Request())
         else:
@@ -65,25 +68,23 @@ def savetxt(items, filename):  # list items [] // filename of the savefile.txt
                     for item in items:  # write every item on it
                         arquivo.write(item + '\n')
                 print("Files saved!")
+        else:
+            savetxt(items, filename)
     else:
-        savetxt(items, filename)
+        savetxt(items, filename)  # recursive call
 
 
-def all(drive, txtname, folderID):
+def all(drive, sp, txtname, folderID):  # this function is called to retrieve data from GDrives folder, could be all data or from a specific folder
     listaItens = []
     count = 0
     query_str = "mimeType='audio/mpeg' and trashed != true"
-    if folderID is not None:
+    if folderID is not None:  # folderID
         query_str = "mimeType='audio/mpeg' and trashed != true and parents in \'{}\'".format(folderID)
     page_token = None
 
     while True:
-        results = drive.files().list(q=query_str,
-                                     corpora='user',
-                                     pageSize=500,
-                                     spaces='drive',
-                                     fields='nextPageToken, *',
-                                     pageToken=page_token).execute()
+        results = drive.files().list(q=query_str, corpora='user', pageSize=500, spaces='drive',
+                                     fields='nextPageToken, *', pageToken=page_token).execute()
         for index, item in enumerate(results.get('files', []), count + 1):
             count += 1
             listaItens.append(item.get('name') + ' ' + item.get('id'))
@@ -93,19 +94,20 @@ def all(drive, txtname, folderID):
         if page_token is None:
             break
     savetxt(listaItens, txtname)
+    if folderID is None:
+        addQuestion(listaItens, sp)
     return listaItens
 
 
-def folderOnly(drive, sp):
-    parentslist = []  # id parents item
+def folderOnly(drive, sp):  # shows up the folders with audio/mpeg content and provides access to it
+    parentslist = []  # parents id of folders
     count = 0
-    query_str = "mimeType='audio/mpeg' and trashed != true"  # query to be send
+    query_str = "mimeType='audio/mpeg' and trashed != true"  # standard query to be send
     page_token = None
 
     while True:
         results = drive.files().list(q=query_str, corpora='user', pageSize=500, spaces='drive',
-                                     fields='nextPageToken, *',
-                                     pageToken=page_token).execute()
+                                     fields='nextPageToken, *', pageToken=page_token).execute()
         for index, item in enumerate(results.get('files', []), count):  # for each file in files[]
             for parents in item.get('parents'):  # for each item in sublist of files[]
                 if not parentslist.__contains__(parents):  # if parents[] not contains musics -> parentsID
@@ -120,27 +122,34 @@ def folderOnly(drive, sp):
         index = 0
         print("\nThis could take a while...\n'0' = Voltar\nPastas:")
 
-        for item in parentslist:
+        for item in parentslist:  # for each item in parentslist
             index += 1
-            print(str(index) + ' ' + search(drive, item).get('name'))
-        choice = int(input("\nAcessar: "))
+            print(str(index) + ' ' + search(drive, item).get('name'))  # print index and item name
+        choice = int(input("\nAcessar: "))  # choose what folder you want
         choice -= 1
         if choice == -1:
             break
 
         elif 0 <= choice < len(parentslist):
-            listaItens = all(drive, search(drive, parentslist[choice]).get('name'), parentslist[choice])
+            listaItens = all(drive, sp, search(drive, parentslist[choice]).get('name'), parentslist[choice])
+            addQuestion(listaItens, sp)
 
-            ask = input("\nAdicionar ao Spotify esses itens? (Y/N) ").lower()
-            if ask.isascii():
-                if ask == 'y' or ask == 'n':
-                    if ask == 'y':
-                        configBrowser(listaItens, sp)
+
+def addQuestion(listaItens, sp):
+    while True:
+        ask = input("\nAdicionar ao Spotify esses itens? (Y/N) ").lower()
+        if ask.isascii():
+            if ask == 'y' or ask == 'n':
+                if ask == 'y':
+                    configBrowser(listaItens, sp)
                 else:
-                    continue
+                    break
+            else:
+                continue
+        else:
+            continue
 
-
-def search(drive, parentsid):
+def search(drive, parentsid):  # search exactly one item from GDrive
     page_token = None
 
     while True:
@@ -155,13 +164,13 @@ def search(drive, parentsid):
 
 
 def main():
-    sp = spotify.sp
-    drive = LoginGDrive()
+    sp = spotify.sp  # spotify.py
+    drive = LoginGDrive()  # GDrive services
     while True:
         print("\n[1] Search for all musics\n[2] search for musics in a specific folder\n[3] Quit")
         choice = input("Opção: ")
         if choice == '1':
-            all(drive, "Allmusics", None)
+            all(drive, sp, "Allmusics", None)
         elif choice == '2':
             folderOnly(drive, sp)
         elif choice == '3':
@@ -200,7 +209,6 @@ def Browser(driver, sp, opcao, q, SE, key, item, count):
     driver.get(SE.format(q))  # starts the chrome and searches the query
     if driver.current_url == "https://www.google.com/sorry/index?continue=":  # if the Google block the IP
         engines.pop(engines.index(SE))  # remove it from the list
-        driver.close()
         Browser(driver, sp, opcao, q, engines[engines.index(SE) + 1], key, item, count)  # uses another search engine
     else:
         tags = driver.find_elements_by_xpath("//a[@href]")  # find <a </a>
@@ -226,7 +234,6 @@ def Browser(driver, sp, opcao, q, SE, key, item, count):
                         arquivo.close()
                         break
                 else:
-                    driver.close()
                     Browser(driver, sp, opcao, q, engines[engines.index(SE) + 1], key, item, count)  # uses another search engine
 
 

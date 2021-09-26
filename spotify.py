@@ -26,6 +26,7 @@ class Spotify:
         except:
             print("I couldnt find: " + tracks[0])
             pass
+
     def playlists(self):
         print("Add into which playlist? ")
         for i, item in enumerate(self.playlist['items']):
