@@ -201,6 +201,7 @@ def Browser(driver, sp, opcao, q, SE, key, item, count):
     driver.get(SE.format(q))  # starts the chrome and searches the query
     if driver.current_url == "https://www.google.com/sorry/index?continue=":  # if the Google block the IP
         engines.pop(engines.index(SE))  # remove it from the list
+        driver.close()
         Browser(driver, sp, opcao, q, engines[engines.index(SE) + 1], key, item, count)  # uses another search engine
     else:
         tags = driver.find_elements_by_xpath("//a[@href]")  # find <a </a>
@@ -226,6 +227,7 @@ def Browser(driver, sp, opcao, q, SE, key, item, count):
                         arquivo.close()
                         break
                 else:
+                    driver.close()
                     Browser(driver, sp, opcao, q, engines[engines.index(SE) + 1], key, item, count)  # uses another search engine
 
 
