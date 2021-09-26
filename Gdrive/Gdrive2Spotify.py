@@ -97,7 +97,6 @@ def all(drive, txtname, folderID):
 
 
 def folderOnly(drive, sp):
-    listaItens = []
     parentslist = []  # id parents item
     count = 0
     query_str = "mimeType='audio/mpeg' and trashed != true"  # query to be send
