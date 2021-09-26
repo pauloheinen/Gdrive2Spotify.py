@@ -1,16 +1,9 @@
-"""
-Client ID SPOTIFY 8ad707a87c8445b481c240424ad5998c
-Client Secret SPOTIFY d00fda6a444f41cbb4e3bd5528fd8475
-https://github.com/plamere/spotipy
-https://developer.spotify.com/console/get-users-profile/
-"""
+import spotipy
+from spotipy.oauth2 import *
 
 redirect_uri = 'http://localhost:8888/callback'
 client_id = '8ad707a87c8445b481c240424ad5998c'
 client_secret = 'd00fda6a444f41cbb4e3bd5528fd8475'
-
-import spotipy
-from spotipy.oauth2 import *
 
 
 class Spotify:

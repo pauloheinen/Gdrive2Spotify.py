@@ -1,11 +1,3 @@
-"""
-client ID GDRIVE 112307785324623293295
-api KEY GDRIVE AIzaSyDV7ZD8MPZy44akQdQ3ixFZCllxLueGsNI
-Client ID SPOTIFY 8ad707a87c8445b481c240424ad5998c
-Client Secret SPOTIFY d00fda6a444f41cbb4e3bd5528fd8475
-Make a script that takes .mp3 from Gdrive and add that .mp3 on Spotify.
-"""
-
 # GDRIVE
 from __future__ import print_function
 import os.path
@@ -16,6 +8,9 @@ from googleapiclient.discovery import build
 
 SCOPES = ['https://www.googleapis.com/auth/drive.metadata.readonly']
 
+# SPOTIFY
+import spotify
+
 # SELENIUM
 from selenium import webdriver
 
@@ -25,9 +20,6 @@ GOOGLE = "https://www.google.com/search?q={0}"
 YANDEX = "https://yandex.com/search/?text={0}"
 YAHOO = "https://search.yahoo.com/search;_ylt=A0geKei5QEZhFKAAL1xDDWVH;_ylc=X1MDMTE5NzgwNDg2NwRfcgMyBGZyAwRmcjIDcDpzLHY6c2ZwLG06c2ItdG9wBGdwcmlkAzJVOExwOFkuU1ZXUG4uazRvTDZHZUEEbl9yc2x0AzAEbl9zdWdnAzAEb3JpZ2luA3NlYXJjaC55YWhvby5jb20EcG9zAzAEcHFzdHIDBHBxc3RybAMwBHFzdHJsAzgxBHF1ZXJ5A0h1bmdyaWElMjBIaXAlMjBIb3AlMjAtJTIwQW1vciUyMGUlMjBGJUMzJUE5JTIwKE9mZmljaWFsJTIwTXVzaWMlMjBWaWRlbyklMjAlMjNDaGVpcm9Eb01hdG8lMjAobXAzY3V0Lm5ldCkubXAzBHRfc3RtcAMxNjMxOTk0MDQ2?p={0}&fr=sfp&fr2=p%3As%2Cv%3Asfp%2Cm%3Asb-top&iscqry="
 engines = [DUCK, ASK, YAHOO, YANDEX, GOOGLE]
-
-# SPOTIFY
-import spotify
 
 
 # musica 1Q5gkiWnZaQ9UKgF-dtpZk9isOrfVsuTf
@@ -136,18 +128,16 @@ def folderOnly(drive, sp):  # shows up the folders with audio/mpeg content and p
 
 
 def addQuestion(listaItens, sp):
-    while True:
-        ask = input("\nAdicionar ao Spotify esses itens? (Y/N) ").lower()
-        if ask.isascii():
-            if ask == 'y' or ask == 'n':
-                if ask == 'y':
-                    configBrowser(listaItens, sp)
-                else:
-                    break
-            else:
-                continue
+    ask = input("\nAdicionar ao Spotify esses itens? (Y/N) ").lower()
+    if ask.isascii():
+        if ask == 'y' or ask == 'n':
+            if ask == 'y':
+                configBrowser(listaItens, sp)
         else:
-            continue
+            addQuestion(listaItens, sp)
+    else:
+        addQuestion(listaItens, sp)
+
 
 def search(drive, parentsid):  # search exactly one item from GDrive
     page_token = None
@@ -234,7 +224,8 @@ def Browser(driver, sp, opcao, q, SE, key, item, count):
                         arquivo.close()
                         break
                 else:
-                    Browser(driver, sp, opcao, q, engines[engines.index(SE) + 1], key, item, count)  # uses another search engine
+                    Browser(driver, sp, opcao, q, engines[engines.index(SE) + 1], key, item,
+                            count)  # uses another search engine
 
 
 if __name__ == '__main__':
