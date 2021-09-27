@@ -21,12 +21,6 @@ YANDEX = "https://yandex.com/search/?text={0}"
 YAHOO = "https://search.yahoo.com/search;_ylt=A0geKei5QEZhFKAAL1xDDWVH;_ylc=X1MDMTE5NzgwNDg2NwRfcgMyBGZyAwRmcjIDcDpzLHY6c2ZwLG06c2ItdG9wBGdwcmlkAzJVOExwOFkuU1ZXUG4uazRvTDZHZUEEbl9yc2x0AzAEbl9zdWdnAzAEb3JpZ2luA3NlYXJjaC55YWhvby5jb20EcG9zAzAEcHFzdHIDBHBxc3RybAMwBHFzdHJsAzgxBHF1ZXJ5A0h1bmdyaWElMjBIaXAlMjBIb3AlMjAtJTIwQW1vciUyMGUlMjBGJUMzJUE5JTIwKE9mZmljaWFsJTIwTXVzaWMlMjBWaWRlbyklMjAlMjNDaGVpcm9Eb01hdG8lMjAobXAzY3V0Lm5ldCkubXAzBHRfc3RtcAMxNjMxOTk0MDQ2?p={0}&fr=sfp&fr2=p%3As%2Cv%3Asfp%2Cm%3Asb-top&iscqry="
 engines = [DUCK, ASK, YAHOO, YANDEX, GOOGLE]
 
-
-# musica 1Q5gkiWnZaQ9UKgF-dtpZk9isOrfVsuTf
-# Random 1nyd0LFdYpzNEaLIIvBwc6jBSY-wpiUkr
-# Rap, eletro 11zEAVrmBwRG_urikO7uVCVV3VRRi6f4T
-
-
 #  login into Google Drive
 def LoginGDrive():
     creds = None
