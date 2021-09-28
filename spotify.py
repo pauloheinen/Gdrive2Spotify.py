@@ -1,8 +1,8 @@
 import spotipy
 from spotipy.oauth2 import *
 
-client_id = '8ad707a87c8445b481c240424ad5998c'
-client_secret = 'd00fda6a444f41cbb4e3bd5528fd8475'
+client_id = 'APIKEY'
+client_secret = 'APIKEY'
 redirect_uri = 'http://localhost:8888/callback'
 
 
