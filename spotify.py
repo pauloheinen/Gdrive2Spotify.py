@@ -1,9 +1,9 @@
 import spotipy
 from spotipy.oauth2 import *
 
-redirect_uri = 'http://localhost:8888/callback'
 client_id = '8ad707a87c8445b481c240424ad5998c'
 client_secret = 'd00fda6a444f41cbb4e3bd5528fd8475'
+redirect_uri = 'http://localhost:8888/callback'
 
 
 class Spotify:
@@ -39,7 +39,6 @@ def login():
                                                         ))
     print("Logged")
     return spotify
-
 
 splogin = login()  # take spotify's api methods
 sp = Spotify(splogin)  # take my own build class methods

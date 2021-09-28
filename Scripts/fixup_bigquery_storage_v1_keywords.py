@@ -1,4 +1,4 @@
-#!C:\Users\Paulo Henrique\Desktop\Projetos\GdriveSpotify\Scripts\python.exe
+#!C:\Users\Paulo Henrique\Desktop\Projetos\GdriveSpotify.py\Scripts\python.exe
 # -*- coding: utf-8 -*-
 # Copyright 2020 Google LLC
 #
