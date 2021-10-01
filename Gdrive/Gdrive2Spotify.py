@@ -211,13 +211,13 @@ def Browser(driver, sp, opcao, q, SE, key, item, count):
                 break
 
             elif len(tags) == tagcounter:  # if it is at the end of tags[] then
-                if (engines.index(SE) + 1) >= len(engines):  # if hasn't ended the search engines[]
+                if (engines.index(SE) + 1) >= len(engines):  # if has ended the search engines[]
                     print("I couldnt find " + item)
                     with open('Failed-list.txt', 'a', encoding='utf-8') as arquivo:
                         arquivo.write(item + '\n')
                         arquivo.close()
                         break
-                else:
+                else:  # if hasn't ended search engines[]
                     Browser(driver, sp, opcao, q, engines[engines.index(SE) + 1], key, item,
                             count)  # uses another search engine
 
